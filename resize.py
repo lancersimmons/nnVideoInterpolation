@@ -20,8 +20,9 @@ def generateFrames(filename):
             ## preview frames
             # cv2.imshow('window-name',resizedImage)
             # time.sleep(0.035)
-
-            cv2.imwrite("frame%d.jpg" % count, resizedImage)
+            formattedString = format(count, '05d')
+            # print(formattedString)
+            cv2.imwrite("frame%s.jpg" % formattedString, resizedImage)
             count = count + 1
             if cv2.waitKey(10) & 0xFF == ord('q'):
                 break
