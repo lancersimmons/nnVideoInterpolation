@@ -38,6 +38,48 @@ allFrames = load_images.load('frames', frameCount)
 -- PARAMETERS
 numberOfInputImagesToUse = 100
 
+if numberOfInputImagesToUse > allFrames:size(1) then
+	print "Bad parameter: numberOfInputImagesToUse > number of frames"
+	os.exit()
+end
+
+
+
+sizeOfTrainingSet = math.floor((9/10) * numberOfInputImagesToUse)
+sizeOfTestSet = numberOfInputImagesToUse - sizeOfTrainingSet
+
+print("Training Set Size: ", sizeOfTrainingSet)
+print("Test Set Size:     ", sizeOfTestSet)
+
+
+--  build training set
+trainingFrames = 
+	torch.Tensor(
+	sizeOfTrainingSet,
+	allFrames:size(2),
+	allFrames:size(3),
+	allFrames:size(4))
+
+for frameNumber=1, sizeOfTrainingSet, 1
+do
+	trainingFrames[frameNumber] = allFrames[frameNumber]:clone()
+end
+
+
+--  build testing set
+testingFrames = 
+	torch.Tensor(
+	sizeOfTestSet,
+	allFrames:size(2),
+	allFrames:size(3),
+	allFrames:size(4))
+
+for frameNumber=1, sizeOfTestSet, 1
+do
+	testingFrames[frameNumber] = allFrames[frameNumber + sizeOfTrainingSet]:clone()
+end
+
+
 os.exit()
 
 
