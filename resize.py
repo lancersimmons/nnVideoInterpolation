@@ -1,4 +1,7 @@
 #!/usr/bin/python
+#
+# Converts .mp4 to frames.
+
 
 # IMPORTS
 import sys
@@ -8,6 +11,13 @@ import time
 import shutil
 import errno
 
+# PARAMETERS
+frameWidth = 360
+frameHeight = 240
+frameGroupSize = 3
+
+
+# FUNCTIONS
 def generateFrames(filename):
     # generate all the frames
     try:
@@ -15,7 +25,7 @@ def generateFrames(filename):
         count = 0
         while cap.isOpened():
             ret,frame = cap.read()
-            resizedImage = cv2.resize(frame, (360, 240))
+            resizedImage = cv2.resize(frame, (frameWidth, frameHeight))
 
             ## preview frames
             # cv2.imshow('window-name',resizedImage)
@@ -69,9 +79,25 @@ def main():
     sourceDirFiles = os.listdir(cwd)
     destinationDir = cwd + "/frames"
 
+
+    # Drop frames from th eend until total frame is a multiple of frameGroupSize
+    # This is so we can get triplets, quintuplets, etc.
+    numberFrames = len(sourceDirFiles)
+    while numberFrames % frameGroupSize != 0:
+        print("Deleting frame!")
+        # delete file
+        os.remove(sourceDirFiles[-1])
+        # forget filename
+        del sourceDirFiles[-1]
+        # check number of frames now
+        numberFrames = len(sourceDirFiles)
+
     for fil in sourceDirFiles:
         if fil.endswith(".jpg"):
             shutil.move(fil,destinationDir)
+
+
+
 
 if __name__ == "__main__":
     main()

@@ -10,8 +10,13 @@ require('image')
 require('nn')
 require('optim')
 require('math')
-
 load_images = require('load_images')
+
+
+-- PARAMETERS:
+numberOfInputImagesToUse = 100
+
+-- CODE START:
 
 -- set up the rng for math lib
 math.randomseed(os.time())
@@ -19,29 +24,26 @@ math.randomseed(os.time())
 -- set default tensor type to 32-bit float
 torch.setdefaulttensortype('torch.FloatTensor')
 
-
 -- open frames dir, count frames
-f = io.popen('ls frames')
+fdir = io.popen('ls frames')
 frameCount = 0
-for name in f:lines() do 
+for name in fdir:lines() do 
 	-- print(name) 
 	frameCount = frameCount + 1
 end
 
 print(frameCount, " frames")
 
-
 -- tensor of all frames in frames directory
 allFrames = load_images.load('frames', frameCount)
 
-
--- PARAMETERS
-numberOfInputImagesToUse = 100
-
+-- confirm that parameter is correct
 if numberOfInputImagesToUse > allFrames:size(1) then
 	print "Bad parameter: numberOfInputImagesToUse > number of frames"
 	os.exit()
 end
+
+if numberOfInputImagesToUse 
 
 
 
