@@ -14,7 +14,7 @@ load_images = require('load_images')
 
 
 -- PARAMETERS:
-numberOfInputImagesToUse = 100
+numberOfInputImagesToUse = 101
 
 -- CODE START:
 
@@ -43,7 +43,8 @@ if numberOfInputImagesToUse > allFrames:size(1) then
 	os.exit()
 end
 
-if numberOfInputImagesToUse 
+-- Check if number of images to use is a mod of 3?
+-- if numberOfInputImagesToUse 
 
 
 

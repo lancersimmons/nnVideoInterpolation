@@ -1,10 +1,114 @@
-require 'nn'
-require 'optim'
+-- Video Interpolation CNN
+-- Fall, 2016
 
-batch_size = 100  -- All of the below needs to be set appropriately
+
+-- REQUIRES:
+require('image')
+require('nn')
+require('optim')
+require('math')
+load_images = require('load_images')
+
+-- PARAMETERS:
+numberOfInputFramesToUse = 300
+
+--3 for triplets, 5 for quintuplets, etc.
+frameGroupSize = 3
+
+-- ARCHITECTURAL PARAMETERS
+batch_size = 100
 frame_width = 160
 frame_height = 96
 n_channels = 3
+
+
+
+-- CODE START:
+
+-- set default tensor type to 32-bit float
+torch.setdefaulttensortype('torch.FloatTensor')
+
+-- set up the rng for math lib
+math.randomseed(os.time())
+
+-- open frames directory, count frames
+fdir = io.popen('ls frames')
+frameCount = 0
+for name in fdir:lines() do 
+	-- print(name) 
+	frameCount = frameCount + 1
+end
+
+print(frameCount, " frames in directory.")
+print("Loading frames into tensor...")
+
+-- tensor of all frames in frames directory
+allFrames = load_images.load('frames', frameCount)
+
+-- confirm that parameter is correct size
+if numberOfInputFramesToUse > allFrames:size(1) then
+	print "Bad parameter: numberOfInputFramesToUse > number of frames"
+	os.exit()
+end
+
+if ((numberOfInputFramesToUse % frameGroupSize) ~= 0) then
+	print "Bad parameter: numberOfInputFramesToUse % frameGroupSize ~= 0"
+	os.exit()
+end
+
+if ((numberOfInputFramesToUse % 10) ~= 0) then
+	print "Bad parameter: numberOfInputFramesToUse % 10 ~= 0"
+	os.exit()
+end
+
+
+
+
+sizeOfTrainingSet = math.floor((9/10) * numberOfInputFramesToUse)
+sizeOfTestSet = numberOfInputFramesToUse - sizeOfTrainingSet
+
+print("Training Set Size: ", sizeOfTrainingSet)
+print("Test Set Size:     ", sizeOfTestSet)
+
+os.exit()
+
+
+--  build training set
+trainingFrames = 
+	torch.Tensor(
+	sizeOfTrainingSet,
+	allFrames:size(2),
+	allFrames:size(3),
+	allFrames:size(4))
+
+for frameNumber=1, sizeOfTrainingSet, 1
+do
+	trainingFrames[frameNumber] = allFrames[frameNumber]:clone()
+end
+
+
+--  build testing set
+testingFrames = 
+	torch.Tensor(
+	sizeOfTestSet,
+	allFrames:size(2),
+	allFrames:size(3),
+	allFrames:size(4))
+
+for frameNumber=1, sizeOfTestSet, 1
+do
+	testingFrames[frameNumber] = allFrames[frameNumber + sizeOfTrainingSet]:clone()
+end
+
+
+
+
+
+
+
+
+
+
 
 input_frames = torch.Tensor(batch_size, 2, n_channels, frame_height, frame_width)
 output_frame2 = torch.Tensor(batch_size, n_channels, frame_height, frame_width)
