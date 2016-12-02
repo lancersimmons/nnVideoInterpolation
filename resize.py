@@ -99,7 +99,7 @@ def main():
     sourceDirFiles.sort()
 
 
-    # Drop frames from th eend until total frame is a multiple of frameGroupSize
+    # Drop frames from the end until total frames is a multiple of frameGroupSize
     # This is so we can get triplets, quintuplets, etc.
     numberFrames = len(sourceDirFiles)
     while numberFrames % frameGroupSize != 0:

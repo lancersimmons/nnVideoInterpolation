@@ -51,41 +51,36 @@ if numberOfInputFramesToUse > allFrames:size(1) then
 	os.exit()
 end
 
-if ((numberOfInputFramesToUse % frameGroupSize) ~= 0) then
-	print "Bad parameter: numberOfInputFramesToUse % frameGroupSize ~= 0"
-	os.exit()
-end
+-- if ((numberOfInputFramesToUse % frameGroupSize) ~= 0) then
+-- 	print "Bad parameter: numberOfInputFramesToUse % frameGroupSize ~= 0"
+-- 	os.exit()
+-- end
 
-if ((numberOfInputFramesToUse % 10) ~= 0) then
-	print "Bad parameter: numberOfInputFramesToUse % 10 ~= 0"
-	os.exit()
-end
+-- if ((numberOfInputFramesToUse % 10) ~= 0) then
+-- 	print "Bad parameter: numberOfInputFramesToUse % 10 ~= 0"
+-- 	os.exit()
+-- end
 
-
-
-
+-- Set size of training set, test set
 sizeOfTrainingSet = math.floor((9/10) * numberOfInputFramesToUse)
 sizeOfTestSet = numberOfInputFramesToUse - sizeOfTrainingSet
 
 print("Training Set Size: ", sizeOfTrainingSet)
 print("Test Set Size:     ", sizeOfTestSet)
 
-os.exit()
-
-
 --  build training set
 trainingFrames = 
 	torch.Tensor(
 	sizeOfTrainingSet,
-	allFrames:size(2),
-	allFrames:size(3),
-	allFrames:size(4))
+	allFrames:size(2),	-- channels (3)
+	allFrames:size(3),	-- height (96)
+	allFrames:size(4))	-- width (160)
 
 for frameNumber=1, sizeOfTrainingSet, 1
 do
-	trainingFrames[frameNumber] = allFrames[frameNumber]:clone()
+	-- trainingFrames[frameNumber] = allFrames[frameNumber]:clone()
+	trainingFrames[frameNumber] = allFrames[frameNumber]
 end
-
 
 --  build testing set
 testingFrames = 
@@ -97,22 +92,40 @@ testingFrames =
 
 for frameNumber=1, sizeOfTestSet, 1
 do
-	testingFrames[frameNumber] = allFrames[frameNumber + sizeOfTrainingSet]:clone()
+	-- testingFrames[frameNumber] = allFrames[frameNumber + sizeOfTrainingSet]:clone()
+	testingFrames[frameNumber] = allFrames[frameNumber + sizeOfTrainingSet]
 end
 
 
 
-
-
-
-
-
-
-
-
+-- these tensors will hold the outer and inner frames of the triplets, respectively
 input_frames = torch.Tensor(batch_size, 2, n_channels, frame_height, frame_width)
-output_frame2 = torch.Tensor(batch_size, n_channels, frame_height, frame_width)
+output_frames_middle = torch.Tensor(batch_size, n_channels, frame_height, frame_width)
 
+
+-- FIXME: Ensure generalization of this code for more input sizes / parameters\
+-- This will move necessary frames into the input_frames, output_frames_middle tensors
+for frameNumber=1, batch_size, 1
+do
+	-- print("Frame number in batch: ", frameNumber) -- 1 to 100 inclusive
+	
+	input_frames[0+frameNumber][1] = trainingFrames[0+frameNumber]
+	input_frames[0+frameNumber][2] = trainingFrames[0+frameNumber+2]
+
+	output_frames_middle[0+frameNumber] = trainingFrames[0+frameNumber+1]
+
+
+end
+
+-- -- FIXME: Remove SANITY CHECK
+-- predictedImage = torch.Tensor(3,128,128)
+-- predictedImage = input_frames[50][2]
+
+-- filename = "test.jpg"
+-- image.save(filename, predictedImage)
+
+
+-- FIXME: Fix the Tanh/relu scaling issue
 ------------ Model ------------------------------------------------
 
 s1 = nn.Sequential()
@@ -227,10 +240,16 @@ model:add(nn.SpatialConvolution(96, 3, 3, 3, 1, 1, 1, 1))
 model:add(nn.ReLU())									--- ouput_size: 3 x fr_w/1 x fr_h/1
 -------------------------------------------------------------------
 
+-- FIXME: ENABLE THIS
+
 
 inputs = torch.randn(batch_size, 2, n_channels, frame_height, frame_width)
 inputs1 = torch.randn(n_channels, frame_height, frame_width)
 
+-- FIXME: Why does this cause me to run out of ram?
+-- I don't feel like it should...
+print("Forwarding...")
 aa = model:forward(inputs)
+-- aa = model:forward(input_frames)
 print(aa)
 
