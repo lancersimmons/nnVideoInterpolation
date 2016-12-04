@@ -319,7 +319,7 @@ do
 	-- print(groundTruthFrame) -- 1x3x96x160
 	-- print(predictedFrame) --1x3x96x160
 
-	print(loss)
+	print("Loss:", loss)
 	tempPredictedImage = predictedFrame[1]
 	tempGroundTruth = groundTruthFrame[1]
 
@@ -330,6 +330,33 @@ do
 	tempGroundTruth = tempGroundTruth + 1
 	tempGroundTruth = tempGroundTruth / 2
 
+
+	maxR = 0
+	maxG = 0
+	maxB = 0
+	for loopH=1, 96, 1 do
+		for loopW=1, 160, 1 do
+
+			tempR = tempPredictedImage[1][loopH][loopW]
+			tempG = tempPredictedImage[2][loopH][loopW]
+			tempB = tempPredictedImage[3][loopH][loopW]
+
+			if tempR > maxR then
+				maxR = tempR
+			end			 	
+			if tempG > maxG then
+				maxG = tempG
+			end	
+			if tempB > maxB then
+				maxB = tempB
+			end	
+		end
+	end
+
+	print("Maxes: ")
+	print("Max red:   "maxR)	
+	print("Max green: "maxG)	
+	print("Max blue:  "maxB)
 
 	filename = "Original" .. tostring(loopIterator) .. ".jpg"
 	image.save(filename, tempGroundTruth)
