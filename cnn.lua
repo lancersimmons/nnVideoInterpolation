@@ -16,7 +16,7 @@ numberOfInputFramesToUse = 300
 frameGroupSize = 3
 
 -- ARCHITECTURAL PARAMETERS
-trainingCycles = 100
+trainingCycles = 10
 batch_size = 1
 frame_width = 160
 frame_height = 96
@@ -102,11 +102,11 @@ end
 
 -- -- FIXME: Why is this causing the loss to be worse?
 -- -- Scale RGB from [0..1] to [-1..1] to satisfy Tanh
--- trainingFrames = trainingFrames * 2
--- trainingFrames = trainingFrames - 1
+trainingFrames = trainingFrames * 2
+trainingFrames = trainingFrames - 1
 
--- testingFrames = testingFrames * 2
--- testingFrames = testingFrames - 1
+testingFrames = testingFrames * 2
+testingFrames = testingFrames - 1
 
 
 
@@ -284,13 +284,13 @@ do
 	-- (2) accumulate gradients
 	model:backward(input_frames, criterion:backward(model.output, output_frames_middle))
 	-- (3) update parameters with a varied learning rate
-	if loss > 0.12 then
-		model:updateParameters(0.20)
-	elseif loss > 0.075 then
-		model:updateParameters(0.07)
-	else
-		model:updateParameters(0.05)
-	end
+	-- if loss > 0.12 then
+	-- 	model:updateParameters(0.20)
+	-- elseif loss > 0.075 then
+	-- 	model:updateParameters(0.07)
+	-- else
+	model:updateParameters(0.05)
+	-- end
 end
 
 
@@ -322,6 +322,14 @@ do
 	print(loss)
 	tempPredictedImage = predictedFrame[1]
 	tempGroundTruth = groundTruthFrame[1]
+
+	-- -- Scale RGB from [-1..1] to [0..1] to output correctly
+	tempPredictedImage = tempPredictedImage + 1
+	tempPredictedImage = tempPredictedImage / 2
+
+	tempGroundTruth = tempGroundTruth + 1
+	tempGroundTruth = tempGroundTruth / 2
+
 
 	filename = "Original" .. tostring(loopIterator) .. ".jpg"
 	image.save(filename, tempGroundTruth)
