@@ -11,8 +11,11 @@ load_images = require('load_images')
 require 'torch'
 require 'cutorch'
 require 'cunn'
+
+math.randomseed( os.time() )
+
 -- PARAMETERS:
-numberOfInputFramesToUse = 3000
+numberOfInputFramesToUse = 402
 
 --3 for triplets, 5 for quintuplets, etc.
 frameGroupSize = 3
@@ -66,7 +69,7 @@ end
 -- end
 
 -- Set size of training set, test set
-sizeOfTrainingSet = math.floor((9/10) * numberOfInputFramesToUse)
+sizeOfTrainingSet = (math.floor((9/10) * numberOfInputFramesToUse))
 sizeOfTestSet = numberOfInputFramesToUse - sizeOfTrainingSet
 
 print("Training Set Size: ", sizeOfTrainingSet)
@@ -82,9 +85,23 @@ trainingFrames =
 
 for frameNumber=1, sizeOfTrainingSet, 1
 do
-	-- trainingFrames[frameNumber] = allFrames[frameNumber]:clone()
 	trainingFrames[frameNumber] = allFrames[frameNumber]
 end
+
+
+-- table filled with all the triplet leading frame indices
+-- used for random sampling of triplets during training
+tripletLeadingIndices = {}
+for i=1, sizeOfTrainingSet-2 do
+  tripletLeadingIndices[i] = i
+end
+
+-- -- Sanity check
+-- for i=1, #tripletLeadingIndices, 1 do
+-- 	print(i, tripletLeadingIndices[i])
+-- end
+-- print("len tripletLeadingIndices:", #tripletLeadingIndices)
+
 
 --[[
 local shuffle_data = torch.randperm(trainingFrame:size(1))
@@ -127,8 +144,6 @@ do
 end
 
 
-
--- -- FIXME: Why is this causing the loss to be worse?
 -- -- Scale RGB from [0..1] to [-1..1] to satisfy Tanh
 trainingFrames = trainingFrames * 2
 trainingFrames = trainingFrames - 1
@@ -293,43 +308,82 @@ print("Forwarding...")
 input_frames = torch.Tensor(2, n_channels, frame_height, frame_width)
 input_frames = input_frames:cuda()
 output_frames_middle = torch.Tensor(n_channels, frame_height, frame_width)
+-- FIXME: Should the input frames have :cuda() also?
 output_frames_middle = output_frames_middle:cuda()
 -- for training iterations
 local theta, gradTheta = model:getParameters()
 local optimState = {learningRate = 0.01, momentum = 0, learningRateDecay = 5e-7}model:training()
 
 for k = 1, 15 do
-epochloss = 0
-for loopIterator=1, sizeOfTrainingSet-3, 1
-do
-	--print("Training loop:", loopIterator)
-	function feval(theta)
-		-- get input, output frames (first, last, middle)
-		input_frames[1] = trainingFrames[loopIterator] -- first
-		input_frames[2] = trainingFrames[loopIterator + 2] -- last
-		output_frames_middle = trainingFrames[loopIterator + 1] -- middle
-		output_frames_middle=output_frames_middle:cuda()
-		-- forward data and print loss
-		local h_x=model:forward(input_frames)
-		--print(output_frames_middle:type())
-		local J=criterion:forward(h_x, output_frames_middle)
-		io.write(J, "\r")
-		io.flush()
-		epochloss = epochloss + J
-		gradTheta:zero()
-		local dJ_dh_x = criterion:backward(h_x, output_frames_middle)
-		dJ_dh_x:cuda()
-		model:backward(input_frames, dJ_dh_x)
-		return J, gradTheta
+
+	-- shuffle the index leading table entries
+	for i = sizeOfTrainingSet-2, 1, -1 do -- backwards
+	    local r = math.random(i) -- select a random number between 1 and i
+	    -- swap the randomly selected item to position i
+	    tripletLeadingIndices[i], tripletLeadingIndices[r] = tripletLeadingIndices[r], tripletLeadingIndices[i] 
 	end
-	optim.adagrad(feval, theta, optimState)
-end
-	print("epoch loss:", epochloss/267, "epoch done:", k)
+
+	epochloss = 0
+	-- FIXME: I changed this from -3 to -2, which I think should be correct
+	-- May cause errors, should doublecheck
+	for loopIterator=1, sizeOfTrainingSet-2, 1
+	do
+		--print("Training loop:", loopIterator)
+		function feval(theta)
+			-- get input, output frames (first, last, middle)
+			input_frames[1] = trainingFrames[tripletLeadingIndices[i]] -- first
+			input_frames[2] = trainingFrames[tripletLeadingIndices[i] + 2] -- last
+			output_frames_middle = trainingFrames[tripletLeadingIndices[i] + 1] -- middle
+
+			-- Augmentation
+			coinFlip = math.random(1,2)
+			if (coinFlip == 1) then
+				-- reverse frames
+				input_frames[1] = trainingFrames[leadingIndex + 2] -- last
+				input_frames[2] = trainingFrames[leadingIndex] -- first
+			end
+
+
+			coinFlip = math.random(1,2)
+			if (coinFlip == 1) then
+				-- vflip frames
+				input_frames[1] = image.vflip(input_frames[1])
+				input_frames[2] = image.vflip(input_frames[2])
+				output_frames_middle = image.vflip(output_frames_middle)
+			end
+
+			output_frames_middle=output_frames_middle:cuda()
+			-- forward data and print loss
+			local h_x=model:forward(input_frames)
+			--print(output_frames_middle:type())
+			local J=criterion:forward(h_x, output_frames_middle)
+			io.write(J, "\r")
+			io.flush()
+			epochloss = epochloss + J
+			gradTheta:zero()
+			local dJ_dh_x = criterion:backward(h_x, output_frames_middle)
+			dJ_dh_x:cuda()
+			model:backward(input_frames, dJ_dh_x)
+			return J, gradTheta
+		end
+		optim.adagrad(feval, theta, optimState)
+	end
+		print("epoch loss:", epochloss/267, "epoch done:", k)
 end
 
 torch.save("myModel", model)
--- TESTING
 
+
+
+
+
+
+
+
+
+
+
+-- TESTING
 print("Testing...")
 
 -- input_frames = torch.Tensor(batch_size, 2, n_channels, frame_height, frame_width)
@@ -363,33 +417,10 @@ do
 	tempGroundTruth = tempGroundTruth + 1
 	tempGroundTruth = tempGroundTruth / 2
 
+	tempGroundTruth = tempGroundTruth + 1
+	tempGroundTruth = tempGroundTruth / 2
 
-	--[[maxR = 0
-	maxG = 0
-	maxB = 0
-	for loopH=1, 96, 1 do
-		for loopW=1, 160, 1 do
 
-			tempR = tempPredictedImage[loopH][loopW]
-			tempG = tempPredictedImage[loopH][loopW]
-			tempB = tempPredictedImage[3][loopH][loopW]
-
-			if tempR > maxR then
-				maxR = tempR
-			end			 	
-			if tempG > maxG then
-				maxG = tempG
-			end	
-			if tempB > maxB then
-				maxB = tempB
-			end	
-		end
-	end
-
-	print("Maxes: ")
-	print("Max red:   ",maxR)	
-	print("Max green: ",maxG)	
-	print("Max blue:  ",maxB)]]--
 
 	filename = tostring(odd).. ".jpg"
 	image.save(filename, tempGroundTruth)
@@ -400,11 +431,3 @@ do
 end
 
 
-
-
--- -- FIXME: Remove SANITY CHECK
--- predictedImage = torch.Tensor(3,128,128)
--- predictedImage = input_frames[50][2]
-
--- filename = "test.jpg"
--- image.save(filename, predictedImage)
