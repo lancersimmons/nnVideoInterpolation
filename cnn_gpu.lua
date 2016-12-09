@@ -308,7 +308,6 @@ print("Forwarding...")
 input_frames = torch.Tensor(2, n_channels, frame_height, frame_width)
 input_frames = input_frames:cuda()
 output_frames_middle = torch.Tensor(n_channels, frame_height, frame_width)
--- FIXME: Should the input frames have :cuda() also?
 output_frames_middle = output_frames_middle:cuda()
 -- for training iterations
 local theta, gradTheta = model:getParameters()
@@ -324,40 +323,38 @@ for k = 1, 15 do
 	end
 
 	epochloss = 0
-	-- FIXME: I changed this from -3 to -2, which I think should be correct
-	-- May cause errors, should doublecheck
 	for loopIterator=1, sizeOfTrainingSet-2, 1
 	do
 		--print("Training loop:", loopIterator)
 		function feval(theta)
 			-- get input, output frames (first, last, middle)
-			input_frames[1] = trainingFrames[tripletLeadingIndices[i]] -- first
-			input_frames[2] = trainingFrames[tripletLeadingIndices[i] + 2] -- last
-			output_frames_middle = trainingFrames[tripletLeadingIndices[i] + 1] -- middle
-
-			-- Augmentation
+			-- Reversing augmentation
 			coinFlip = math.random(1,2)
 			if (coinFlip == 1) then
+				input_frames[1] = trainingFrames[tripletLeadingIndices[loopIterator]] -- first
+				input_frames[2] = trainingFrames[tripletLeadingIndices[loopIterator] + 2] -- last			
+			else
 				-- reverse frames
-				input_frames[1] = trainingFrames[leadingIndex + 2] -- last
-				input_frames[2] = trainingFrames[leadingIndex] -- first
+				input_frames[1] = trainingFrames[tripletLeadingIndices[loopIterator] + 2] -- last
+				input_frames[2] = trainingFrames[tripletLeadingIndices[loopIterator]] -- first
 			end
+			output_frames_middle = trainingFrames[tripletLeadingIndices[loopIterator] + 1] -- middle
 
-
-			coinFlip = math.random(1,2)
-			if (coinFlip == 1) then
-				-- vflip frames
-				input_frames[1] = image.vflip(input_frames[1])
-				input_frames[2] = image.vflip(input_frames[2])
-				output_frames_middle = image.vflip(output_frames_middle)
-			end
+			-- -- FIXME: Get vertical flip augmentation working
+			-- coinFlip = math.random(1,2)
+			-- if (coinFlip == 1) then
+			-- 	-- vflip frames
+			-- 	input_frames[1] = image.vflip(input_frames[1])
+			-- 	input_frames[2] = image.vflip(input_frames[2])
+			-- 	output_frames_middle = image.vflip(output_frames_middle)
+			-- end
 
 			output_frames_middle=output_frames_middle:cuda()
 			-- forward data and print loss
 			local h_x=model:forward(input_frames)
 			--print(output_frames_middle:type())
 			local J=criterion:forward(h_x, output_frames_middle)
-			io.write(J, "\r")
+			io.write(loopIterator, " ", J, "\r")
 			io.flush()
 			epochloss = epochloss + J
 			gradTheta:zero()
@@ -386,8 +383,6 @@ torch.save("myModel", model)
 -- TESTING
 print("Testing...")
 
--- input_frames = torch.Tensor(batch_size, 2, n_channels, frame_height, frame_width)
--- output_frames_middle = torch.Tensor(batch_size, n_channels, frame_height, frame_width)
 odd = 1
 even = 2
 for loopIterator=1, sizeOfTestSet-2, 1
@@ -416,11 +411,6 @@ do
 
 	tempGroundTruth = tempGroundTruth + 1
 	tempGroundTruth = tempGroundTruth / 2
-
-	tempGroundTruth = tempGroundTruth + 1
-	tempGroundTruth = tempGroundTruth / 2
-
-
 
 	filename = tostring(odd).. ".jpg"
 	image.save(filename, tempGroundTruth)
