@@ -104,6 +104,13 @@ for i=1, sizeOfTrainingSet-2 do
   tripletLeadingIndices[i] = i
 end
 
+-- shuffle the index leading table entries
+for i = sizeOfTrainingSet-2, 1, -1 do -- backwards
+    local r = math.random(i) -- select a random number between 1 and i
+    -- swap the randomly selected item to position i
+    tripletLeadingIndices[i], tripletLeadingIndices[r] = tripletLeadingIndices[r], tripletLeadingIndices[i] 
+end
+
 -- -- Sanity check
 -- for i=1, #tripletLeadingIndices, 1 do
 -- 	print(i, tripletLeadingIndices[i])
@@ -304,13 +311,6 @@ local theta, gradTheta = model:getParameters()
 local optimState = {learningRate = 0.01, momentum = 0, learningRateDecay = 5e-7}model:training()
 
 for k = 1, 15 do
-
-	-- shuffle the index leading table entries
-	for i = sizeOfTrainingSet-2, 1, -1 do -- backwards
-	    local r = math.random(i) -- select a random number between 1 and i
-	    -- swap the randomly selected item to position i
-	    tripletLeadingIndices[i], tripletLeadingIndices[r] = tripletLeadingIndices[r], tripletLeadingIndices[i] 
-	end
 
 	epochloss = 0
 	for loopIterator=1, sizeOfTrainingSet-2, 1
