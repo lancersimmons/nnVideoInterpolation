@@ -15,7 +15,19 @@ require 'cunn'
 math.randomseed( os.time() )
 
 -- PARAMETERS:
-numberOfInputFramesToUse = 400
+
+-- Count frames in frames dir
+local i, t, popen = 0, {}, io.popen
+local pfile = popen('ls -a frames')
+for filename in pfile:lines() do
+    i = i + 1
+    t[i] = filename
+end
+pfile:close()
+
+-- t should be reduced by 2 to get rid of . and ..
+t = t - 2
+numberOfInputFramesToUse = t
 
 modelToLoadFromFile = nil
 if arg[1] ~= nil then
