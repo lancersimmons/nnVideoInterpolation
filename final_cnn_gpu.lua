@@ -388,14 +388,19 @@ do
 	tempGroundTruth = tempGroundTruth + 1
 	tempGroundTruth = tempGroundTruth / 2
 
-	filename = "pics/original/OriginalSeq" .. tostring(odd_original).. ".jpg"
+
+	filename = string.format('pics/original/OriginalSeq%05d.jpg', odd_original)
+	-- filename = "pics/original/OriginalSeq" .. tostring(odd_original).. ".jpg"
 	image.save(filename, tempGroundTruth)
 	odd_original = odd_original + 1
 
-	filename = "pics/prediction/PredictedSeq" .. tostring(odd).. ".jpg"
+	filename = string.format('pics/prediction/PredictedSeq%05d.jpg', odd)
+	-- filename = "pics/prediction/PredictedSeq" .. tostring(odd).. ".jpg"
 	image.save(filename, tempGroundTruth)
 	odd = odd + 2
-	filename = "pics/prediction/PredictedSeq" .. tostring(even).. ".jpg"
+
+	filename = string.format('pics/prediction/PredictedSeq%05d.jpg', even)
+	-- filename = "pics/prediction/PredictedSeq" .. tostring(even).. ".jpg"
 	image.save(filename, tempPredictedImage)
 	even = even + 2
 end
