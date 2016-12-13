@@ -1,5 +1,6 @@
 #!/usr/bin/python
 #
+# Python 2 compatible
 # Converts an .mp4 file to a directory of .jpg frames.
 
 
@@ -10,8 +11,6 @@ import os
 import shutil
 import sys
 import time
-import time
-
 
 ## PARAMETERS
 
