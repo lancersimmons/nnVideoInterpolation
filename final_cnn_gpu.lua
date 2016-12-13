@@ -376,9 +376,9 @@ end
 -- TESTING
 print("Testing...")
 
-even = 0
-even_original = 0
 odd = 1
+odd_original = 1
+even = 2
 for loopIterator=1, sizeOfTestSet-2, 1
 do
 	-- get input frames, output frame (first, last, middle)
@@ -401,20 +401,20 @@ do
 	tempGroundTruth = tempGroundTruth / 2
 
 
-	filename = string.format('pics/original/OriginalSeq%05d.jpg', even_original)
-	-- filename = "pics/original/OriginalSeq" .. tostring(even_original).. ".jpg"
+	filename = string.format('pics/original/OriginalSeq%05d.jpg', odd_original)
+	-- filename = "pics/original/OriginalSeq" .. tostring(odd_original).. ".jpg"
 	image.save(filename, tempGroundTruth)
-	even_original = even_original + 1
-
-	filename = string.format('pics/prediction/PredictedSeq%05d.jpg', even)
-	-- filename = "pics/prediction/PredictedSeq" .. tostring(even).. ".jpg"
-	image.save(filename, tempGroundTruth)
-	even = even + 2
+	odd_original = odd_original + 1
 
 	filename = string.format('pics/prediction/PredictedSeq%05d.jpg', odd)
 	-- filename = "pics/prediction/PredictedSeq" .. tostring(odd).. ".jpg"
-	image.save(filename, tempPredictedImage)
+	image.save(filename, tempGroundTruth)
 	odd = odd + 2
+
+	filename = string.format('pics/prediction/PredictedSeq%05d.jpg', even)
+	-- filename = "pics/prediction/PredictedSeq" .. tostring(even).. ".jpg"
+	image.save(filename, tempPredictedImage)
+	even = even + 2
 end
 
 -----------------------------------------------------------------------------------------------
@@ -464,6 +464,4 @@ for i=1, sizeOfTrainingSet, 1 do
 	image.hflip(trainingFrames[i+sizeOfTrainingSet*2], trainingFrame[temp])
 end
 ]]--
-
-
 
